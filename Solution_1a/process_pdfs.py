@@ -1,99 +1,128 @@
-# ---------------------------- IMPORTS ----------------------------
 import os
 import json
 import fitz  # PyMuPDF
 from langdetect import detect
 
-# ---------------------------- CONFIG ----------------------------
+# -------- CONFIG --------
 INPUT_DIR = "../Challenge_1a/sample_dataset/pdfs/"
 OUTPUT_DIR = "../Solution_1a/outputs_generated/"
 
-# ---------------------------- HEADING DETECTION ----------------------------
-def detect_headings(doc):
-    headings = []
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        blocks = page.get_text("dict")["blocks"]
-        for b in blocks:
-            if "lines" in b:
-                for l in b["lines"]:
-                    for s in l["spans"]:
-                        size = s["size"]
-                        text = s["text"].strip()
-                        if len(text) == 0:
-                            continue
-                        if size > 16:
-                            level = "H1"
-                        elif size > 13:
-                            level = "H2"
-                        elif size > 11:
-                            level = "H3"
-                        else:
-                            continue
-
-                        lang = detect_language(text)
-
-                        headings.append({
-                            "level": level,
-                            "text": text,
-                            "page": page_num + 1,
-                            "language": lang
-                        })
-    return headings
-
-# ---------------------------- TITLE DETECTION ----------------------------
-def detect_title(doc):
-    font_sizes = {}
-    for page in doc:
-        blocks = page.get_text("dict")["blocks"]
-        for b in blocks:
-            if "lines" in b:
-                for l in b["lines"]:
-                    for s in l["spans"]:
-                        size = round(s["size"], 1)
-                        font_sizes[size] = font_sizes.get(size, 0) + 1
-
-    max_font_size = max(font_sizes, key=font_sizes.get)
-    for page in doc:
-        blocks = page.get_text("dict")["blocks"]
-        for b in blocks:
-            if "lines" in b:
-                for l in b["lines"]:
-                    for s in l["spans"]:
-                        if round(s["size"], 1) == max_font_size:
-                            return s["text"].strip()
-    return "Untitled"
-
-# ---------------------------- LANGUAGE DETECTION ----------------------------
+# -------- LANGUAGE DETECTION --------
 def detect_language(text):
     try:
         return detect(text)
     except:
         return "unknown"
 
-# ---------------------------- PDF PROCESSING ----------------------------
+# -------- TITLE DETECTION --------
+def detect_title(doc):
+    max_size = 0
+    title = ""
+
+    for page in doc:
+        blocks = page.get_text("dict")["blocks"]
+        for b in blocks:
+            for l in b.get("lines", []):
+                spans = l.get("spans", [])
+                text = " ".join(s["text"].strip() for s in spans if s["text"].strip())
+                if not text or len(text) < 3 or all(c in "-•—_" for c in text.strip()):
+                    continue
+                for s in spans:
+                    if s["size"] > max_size:
+                        max_size = s["size"]
+                        title = text
+    return title.strip()
+
+# -------- HEADING DETECTION --------
+def detect_headings(doc, title_text):
+    headings = []
+    seen = set()
+
+    for page_num, page in enumerate(doc):
+        blocks = page.get_text("dict")["blocks"]
+        for b in blocks:
+            for l in b.get("lines", []):
+                spans = l.get("spans", [])
+                line_text = " ".join(s["text"].strip() for s in spans if s["text"].strip())
+
+                if not line_text or len(line_text) < 3:
+                    continue
+
+                if line_text.lower().strip() == title_text.lower().strip():
+                    continue
+                if all(c in "-•—_" for c in line_text.strip()):
+                    continue
+                if line_text.strip() in seen:
+                    continue
+                seen.add(line_text.strip())
+
+                font_sizes = [s["size"] for s in spans if s["text"].strip()]
+                if not font_sizes:
+                    continue
+
+                avg_size = sum(font_sizes) / len(font_sizes)
+
+                if avg_size > 16:
+                    level = "H1"
+                elif avg_size > 13:
+                    level = "H2"
+                elif avg_size > 11:
+                    level = "H3"
+                elif avg_size > 9:
+                    level = "H4"
+                else:
+                    continue
+
+                if len(line_text) < 4 or line_text.lower().startswith("rsvp"):
+                    continue
+
+                headings.append({
+                    "level": level,
+                    "text": line_text.strip(),
+                    "page": page_num
+                })
+
+    return headings
+
+# -------- PDF PROCESSING --------
 def process_pdf(pdf_path, output_path):
     doc = fitz.open(pdf_path)
     title = detect_title(doc)
-    headings = detect_headings(doc)
+    outline = detect_headings(doc, title)
+
+    doc_lang = "unknown"
+    if outline:
+        joined_text = " ".join(h["text"] for h in outline[:5])
+        doc_lang = detect_language(joined_text)
 
     output = {
         "title": title,
-        "outline": headings,
-        "document_language": detect_language(" ".join(h["text"] for h in headings[:5])) if headings else "unknown"
+        "outline": outline,
+        "document_language": doc_lang
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
-# ---------------------------- MAIN ENTRY ----------------------------
+# -------- MAIN --------
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    for fname in os.listdir(INPUT_DIR):
-        if fname.endswith(".pdf"):
-            input_pdf = os.path.join(INPUT_DIR, fname)
-            output_json = os.path.join(OUTPUT_DIR, fname.replace(".pdf", ".json"))
-            process_pdf(input_pdf, output_json)
+    if not os.path.exists(INPUT_DIR):
+        print(f"❌ Input directory not found: {INPUT_DIR}")
+        return
+
+    files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".pdf")]
+    if not files:
+        print("⚠️ No PDF files found.")
+        return
+
+    for fname in files:
+        input_pdf = os.path.join(INPUT_DIR, fname)
+        output_json = os.path.join(OUTPUT_DIR, fname.replace(".pdf", ".json"))
+        print(f"🔍 Processing: {fname}")
+        process_pdf(input_pdf, output_json)
+
+    print("\n✅ All PDFs processed.")
 
 if __name__ == "__main__":
     main()
