@@ -6,7 +6,7 @@ from langdetect import detect
 
 # ---------------------------- CONFIG ----------------------------
 INPUT_DIR = "../Challenge_1a/sample_dataset/pdfs/"
-OUTPUT_DIR = "../Challenge_1a/sample_dataset/outputs/"
+OUTPUT_DIR = "../Solution_1a/outputs_generated/"
 
 # ---------------------------- HEADING DETECTION ----------------------------
 def detect_headings(doc):
