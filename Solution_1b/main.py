@@ -5,15 +5,18 @@ from processor import DocumentProcessor
 from ranker import SectionRanker
 from extractor import SubsectionExtractor
 
+
 def process_collection(collection_path, output_path):
     input_json = os.path.join(collection_path, "challenge1b_input.json")
     with open(input_json, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
 
+    # Safely extract persona (supports string or dict)
     persona = metadata.get("persona", "")
     if isinstance(persona, dict):
         persona = persona.get("role", "")
 
+    # Safely extract job (supports 'job' or 'job_to_be_done', string or dict)
     job = metadata.get("job") or metadata.get("job_to_be_done", "")
     if isinstance(job, dict):
         job = job.get("task", "")
@@ -25,6 +28,10 @@ def process_collection(collection_path, output_path):
 
     processor = DocumentProcessor()
     doc_sections = processor.extract_sections(documents)
+
+    # Strip full path and keep only filename in "document" key
+    for section in doc_sections:
+        section["document"] = os.path.basename(section["document"])
 
     ranker = SectionRanker(persona, job)
     ranked_sections = ranker.rank_sections(doc_sections)
@@ -46,8 +53,10 @@ def process_collection(collection_path, output_path):
     output_dir = os.path.join(output_path, os.path.basename(collection_path))
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, "challenge1b_output.json")
+
+    # Ensure Unicode characters like • are preserved
     with open(output_file_path, 'w', encoding='utf-8') as f:
-        json.dump(output_json, f, indent=2)
+        json.dump(output_json, f, indent=2, ensure_ascii=False)
 
     print("[SUCCESS] Output written to:", output_file_path)
 
@@ -62,6 +71,7 @@ def main():
         if os.path.isdir(collection_path):
             print("\n[COLLECTION]", collection)
             process_collection(collection_path, base_output)
+
 
 if __name__ == '__main__':
     main()
