@@ -3,4 +3,5 @@ langdetect==1.0.9
 transformers==4.40.1
 sentence-transformers==2.2.2
 scikit-learn==1.4.2
-torch==2.1.2
+torch
+
