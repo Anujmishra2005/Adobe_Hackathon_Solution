@@ -28,9 +28,9 @@ def process_collection(collection_path, output_path):
     output_json = {
         "metadata": {
             "input_documents": [os.path.basename(doc) for doc in documents],
-            "persona": metadata["persona"],
-            "job": metadata["job"],
-            "timestamp": datetime.datetime.now().isoformat()
+            "persona": metadata.get("persona", ""),
+            "job": metadata.get("job", ""),
+            "processing_timestamp": datetime.datetime.now().isoformat()
         },
         "extracted_sections": ranked_sections,
         "subsection_analysis": subsections
@@ -38,9 +38,10 @@ def process_collection(collection_path, output_path):
 
     output_dir = os.path.join(output_path, os.path.basename(collection_path))
     os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, "challenge1b_output.json"), 'w', encoding='utf-8') as f:
+    output_file_path = os.path.join(output_dir, "challenge1b_output.json")
+    with open(output_file_path, 'w', encoding='utf-8') as f:
         json.dump(output_json, f, indent=2)
-    print("[SUCCESS] Output written to:", os.path.join(output_dir, "challenge1b_output.json"))
+    print("[SUCCESS] Output written to:", output_file_path)
 
 
 def main():
@@ -51,7 +52,7 @@ def main():
     for collection in os.listdir(base_input):
         collection_path = os.path.join(base_input, collection)
         if os.path.isdir(collection_path):
-            print("\n[COLLECTION]", collection)
+            print(f"\n[COLLECTION] {collection}")
             process_collection(collection_path, base_output)
 
 

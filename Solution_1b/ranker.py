@@ -27,7 +27,11 @@ class SectionRanker:
     def rank_sections(self, extracted_sections):
         scored = []
         for section in extracted_sections:
-            score = self._score_text(section["text"])
+            text = section.get("text")
+            if not text:
+                continue  # Skip malformed sections
+
+            score = self._score_text(text)
             section["score"] = score
             scored.append(section)
 
@@ -44,14 +48,18 @@ class SectionRanker:
     def rank_subsections(self, section_texts):
         refined = []
         for section in section_texts:
-            sentences = re.split(r'(?<=[.?!])\s+', section["text"])
+            text = section.get("text")
+            if not text:
+                continue
+
+            sentences = re.split(r'(?<=[.?!])\s+', text)
             for sentence in sentences:
                 score = self._score_text(sentence)
                 if score > 0:
                     refined.append({
-                        "document": section["document"],
+                        "document": section.get("document", ""),
                         "text": sentence.strip(),
-                        "page_number": section["page"],
+                        "page_number": section.get("page", 0),
                         "score": score
                     })
 
