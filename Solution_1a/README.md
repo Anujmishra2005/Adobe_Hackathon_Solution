@@ -14,6 +14,44 @@ To develop a Python-based system that:
 
 ---
 
+## 🧩 Approach
+
+### 🔍 Problem Understanding
+
+The task required structured information extraction from unstructured PDF files, where headings and titles are not explicitly marked but are visually represented using font sizes and positioning.
+
+### ⚙️ Solution Strategy
+
+1. **Font Size-Based Hierarchy Detection**:
+   - Font sizes are extracted across all pages.
+   - The **largest repeated font** (excluding noisy tokens) is treated as the **title**.
+   - Headings are classified into `H1`, `H2`, `H3`, etc., based on font size hierarchy.
+
+2. **Text Block Grouping**:
+   - Lines are grouped by coordinates and styling to detect clean and full heading lines.
+   - Short, disjoint, or duplicate text fragments are filtered.
+
+3. **Language Detection**:
+   - Uses `langdetect` on sampled large text spans from the document.
+
+4. **Noise Filtering**:
+   - Skips text blocks with only symbols, whitespace, or less than 3 characters.
+   - Deduplicates headings and avoids line-by-line fragments.
+
+---
+
+### 🧪 Benefits & Performance
+
+| Metric            | Description                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| ⏱️ **Speed**       | Fast parsing using PyMuPDF, low memory usage                                 |
+| 🎯 **Accuracy**    | High precision in title and heading detection via font statistics            |
+| 🔁 **Compatibility** | Works on most text-based PDFs; future support can be added for OCR input     |
+| 🔌 **Extensibility** | JSON output makes it pluggable into other systems or indexing pipelines     |
+| 💡 **Lightweight**  | No GPU, only CPU; lightweight dependencies                                  |
+
+---
+
 ## 🗂️ Directory Structure
 
 ```
@@ -21,33 +59,33 @@ Adobe_Hackathon_Solution/
 │
 ├── Challenge_1a/
 │   └── sample_dataset/
-│       └── pdfs/                 # 📥 Input PDF files
+│       └── pdfs/                # 📥 Input PDF files
 │
 ├── Solution_1a/
-│   ├── outputs_generated/        # 📤 Output JSON files
-│   ├── process_pdfs.py           # 🚀 Main processing script
-│   ├── requirements.txt          # 📦 Dependencies
-│   └── README.md                 # 📘 This file
+│   ├── outputs_generated/       # 📤 Output JSON files
+│   ├── process_pdfs.py          # 🚀 Main processing script
+│   ├── requirements.txt         # 📦 Dependencies
+│   └── README.md                # 📘 This file
 ```
 
 ---
 
 ## 🔧 Installation & Setup
 
-1. Clone the repository:
+### 1. Clone the repository
 ```bash
 git clone https://github.com/<your-username>/Solution_1a.git
 cd Solution_1a
 ```
 
-2. Create and activate a virtual environment:
+### 2. Create and activate virtual environment
 ```bash
 python -m venv .venv
-.venv\Scripts\activate    # On Windows
-source .venv/bin/activate   # On Mac/Linux
+.venv\Scripts\activate        # On Windows
+source .venv/bin/activate    # On Mac/Linux
 ```
 
-3. Install the dependencies:
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
@@ -56,7 +94,7 @@ pip install -r requirements.txt
 
 ## 📌 Requirements
 
-```
+```ini
 PyMuPDF==1.23.6
 langdetect==1.0.9
 ```
@@ -65,19 +103,19 @@ langdetect==1.0.9
 
 ## 🚀 How to Run
 
-1. Place all input PDF files in the following directory:
+Ensure all input PDF files are placed in the following directory:
 
 ```
 Challenge_1a/sample_dataset/pdfs/
 ```
 
-2. Then execute the script:
+Then execute the main script:
 
 ```bash
 python process_pdfs.py
 ```
 
-3. All JSON outputs will be saved to:
+All outputs will be saved in:
 
 ```
 Solution_1a/outputs_generated/
@@ -87,7 +125,7 @@ Solution_1a/outputs_generated/
 
 ## 🧾 Output Format
 
-Each output JSON file will have the following structure:
+Each output `.json` file will follow this structure:
 
 ```json
 {
@@ -97,8 +135,7 @@ Each output JSON file will have the following structure:
       "level": "H1",
       "text": "Heading Text",
       "page": 0
-    },
-    ...
+    }
   ],
   "document_language": "en"
 }
@@ -118,6 +155,11 @@ Each output JSON file will have the following structure:
       "page": 2
     },
     {
+      "level": "H1",
+      "text": "Table of Contents",
+      "page": 3
+    },
+    {
       "level": "H2",
       "text": "2.1 Intended Audience",
       "page": 6
@@ -129,9 +171,10 @@ Each output JSON file will have the following structure:
 
 ---
 
-## 📬 Contact
+## 🤝 Author
 
-For any queries, please feel free to reach out:
+Developed by **Anuj Mishra** for the Adobe Hackathon 2025.
 
-- GitHub: [Anuj Mishra](https://github.com/Anujmishra2005)
-- LinkedIn: [Anuj Mishra](https://www.linkedin.com/in/anujmishra05/)
+> 📬 Connect with me on [LinkedIn](https://www.linkedin.com/in/anujmishra05) or check out my [GitHub](https://github.com/Anujmishra2005)
+
+---
